@@ -1,0 +1,27 @@
+{
+  "name": "@mindful-browse/lambda-functions",
+  "version": "1.0.0",
+  "description": "AWS Lambda functions for data processing and wellbeing metrics calculation",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:property": "jest --testPathPattern=property",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "package": "npm run build && npm run package:functions",
+    "package:functions": "cd dist && zip -r ../lambda-functions.zip ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.370.0",
+    "@aws-sdk/client-s3": "^3.370.0",
+    "@aws-sdk/client-comprehend": "^3.370.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.370.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "fast-check": "^3.0.0"
+  }
+}

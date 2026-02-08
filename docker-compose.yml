@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  localstack:
+    container_name: mindful-browse-localstack
+    image: localstack/localstack:2.2
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      - "4510-4559:4510-4559"  # External services port range
+    environment:
+      - DEBUG=${DEBUG-}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - SERVICES=dynamodb,s3,lambda,apigateway,cognito-idp,comprehend,iam,sts,secretsmanager,kms,cloudwatch,logs
+      - DATA_DIR=/tmp/localstack/data
+      - LAMBDA_EXECUTOR=docker
+      - LAMBDA_REMOTE_DOCKER=false
+      - PERSISTENCE=1
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./tmp/localstack}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - mindful-browse-network
+
+networks:
+  mindful-browse-network:
+    driver: bridge

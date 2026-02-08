@@ -1,0 +1,26 @@
+{
+  "name": "@mindful-browse/infrastructure",
+  "version": "1.0.0",
+  "description": "AWS CDK infrastructure as code for Mindful Browse platform",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --all",
+    "deploy:staging": "cdk deploy --all --context environment=staging",
+    "destroy": "cdk destroy --all",
+    "diff": "cdk diff",
+    "synth": "cdk synth",
+    "bootstrap": "cdk bootstrap"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.90.0",
+    "constructs": "^10.2.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.90.0",
+    "@types/node": "^18.0.0"
+  }
+}

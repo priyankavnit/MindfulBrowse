@@ -1,0 +1,33 @@
+{
+  "name": "@mindful-browse/browser-extension",
+  "version": "1.0.0",
+  "description": "Browser extension for capturing browsing metadata and providing wellbeing insights",
+  "private": true,
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:property": "jest --testPathPattern=property",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.10.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/webextension-polyfill": "^0.10.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "ts-loader": "^9.4.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "fast-check": "^3.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ]
+}
