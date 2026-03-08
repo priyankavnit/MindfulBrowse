@@ -1,0 +1,1354 @@
+{
+ "Description": "Mindful Browse MVP infrastructure for dev environment",
+ "Resources": {
+  "MindfulBrowseTable03DA46DE": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "PK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "SK",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "PK",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "SK",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": false
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "MindfulBrowse-dev"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseTable/Resource"
+   }
+  },
+  "MindfulBrowseUserPoolF3B89CCA": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_email",
+       "Priority": 1
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": false
+    },
+    "AutoVerifiedAttributes": [
+     "email"
+    ],
+    "EmailVerificationMessage": "The verification code to your new account is {####}",
+    "EmailVerificationSubject": "Verify your new account",
+    "Policies": {
+     "PasswordPolicy": {
+      "MinimumLength": 8,
+      "RequireLowercase": true,
+      "RequireNumbers": true,
+      "RequireSymbols": false,
+      "RequireUppercase": true
+     }
+    },
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolName": "mindful-browse-dev",
+    "UsernameAttributes": [
+     "email"
+    ],
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "The verification code to your new account is {####}",
+     "EmailSubject": "Verify your new account",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseUserPool/Resource"
+   }
+  },
+  "MindfulBrowseUserPoolMindfulBrowseDomainEBBBEB14": {
+   "Type": "AWS::Cognito::UserPoolDomain",
+   "Properties": {
+    "Domain": "mindful-browse-dev",
+    "UserPoolId": {
+     "Ref": "MindfulBrowseUserPoolF3B89CCA"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseUserPool/MindfulBrowseDomain/Resource"
+   }
+  },
+  "MindfulBrowseUserPoolClientC5B438C4": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AccessTokenValidity": 60,
+    "AllowedOAuthFlows": [
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "openid",
+     "email",
+     "profile"
+    ],
+    "CallbackURLs": [
+     "http://localhost:5173",
+     "http://localhost:5173/"
+    ],
+    "ClientName": "mindful-browse-client-dev",
+    "ExplicitAuthFlows": [
+     "ALLOW_USER_PASSWORD_AUTH",
+     "ALLOW_USER_SRP_AUTH",
+     "ALLOW_REFRESH_TOKEN_AUTH"
+    ],
+    "IdTokenValidity": 60,
+    "LogoutURLs": [
+     "http://localhost:5173",
+     "http://localhost:5173/"
+    ],
+    "PreventUserExistenceErrors": "ENABLED",
+    "RefreshTokenValidity": 43200,
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "TokenValidityUnits": {
+     "AccessToken": "minutes",
+     "IdToken": "minutes",
+     "RefreshToken": "minutes"
+    },
+    "UserPoolId": {
+     "Ref": "MindfulBrowseUserPoolF3B89CCA"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseUserPoolClient/Resource"
+   }
+  },
+  "EventProcessorFunctionServiceRoleF834D58D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/EventProcessorFunction/ServiceRole/Resource"
+   }
+  },
+  "EventProcessorFunctionServiceRoleDefaultPolicy38D0B9A9": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "MindfulBrowseTable03DA46DE",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": "bedrock:InvokeModel",
+       "Effect": "Allow",
+       "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "EventProcessorFunctionServiceRoleDefaultPolicy38D0B9A9",
+    "Roles": [
+     {
+      "Ref": "EventProcessorFunctionServiceRoleF834D58D"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/EventProcessorFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "EventProcessorFunction5BEEFE86": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-387030538086-us-east-1",
+     "S3Key": "ca330b3874a56f1237549acb9cf89bf48ae773385ba2d219b435565f71e5be35.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TABLE_NAME": {
+       "Ref": "MindfulBrowseTable03DA46DE"
+      },
+      "LOG_LEVEL": "DEBUG",
+      "BEDROCK_HAIKU_MODEL_ID": "anthropic.claude-3-haiku-20240307-v1:0",
+      "BEDROCK_SONNET_MODEL_ID": "anthropic.claude-3-sonnet-20240229-v1:0",
+      "ENVIRONMENT": "dev"
+     }
+    },
+    "FunctionName": "mindful-browse-processor-dev",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "EventProcessorFunctionServiceRoleF834D58D",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "EventProcessorFunctionServiceRoleDefaultPolicy38D0B9A9",
+    "EventProcessorFunctionServiceRoleF834D58D"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/EventProcessorFunction/Resource",
+    "aws:asset:path": "asset.ca330b3874a56f1237549acb9cf89bf48ae773385ba2d219b435565f71e5be35",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "EventProcessorFunctionLogRetention405D7B67": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "EventProcessorFunction5BEEFE86"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/EventProcessorFunction/LogRetention/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:DeleteRetentionPolicy",
+        "logs:PutRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs22.x",
+    "Timeout": 900,
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-387030538086-us-east-1",
+     "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CognitoAuthorizerF3215DBC": {
+   "Type": "AWS::ApiGateway::Authorizer",
+   "Properties": {
+    "IdentitySource": "method.request.header.Authorization",
+    "Name": "mindful-browse-authorizer-dev",
+    "ProviderARNs": [
+     {
+      "Fn::GetAtt": [
+       "MindfulBrowseUserPoolF3B89CCA",
+       "Arn"
+      ]
+     }
+    ],
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    },
+    "Type": "COGNITO_USER_POOLS"
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/CognitoAuthorizer/Resource"
+   }
+  },
+  "MindfulBrowseApiA7DA48EC": {
+   "Type": "AWS::ApiGateway::RestApi",
+   "Properties": {
+    "Description": "Mindful Browse MVP API",
+    "Name": "mindful-browse-api-dev"
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Resource"
+   }
+  },
+  "MindfulBrowseApiCloudWatchRoleEFAA7434": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "apigateway.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+       ]
+      ]
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/CloudWatchRole/Resource"
+   }
+  },
+  "MindfulBrowseApiAccount5B5C8CAF": {
+   "Type": "AWS::ApiGateway::Account",
+   "Properties": {
+    "CloudWatchRoleArn": {
+     "Fn::GetAtt": [
+      "MindfulBrowseApiCloudWatchRoleEFAA7434",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "MindfulBrowseApiA7DA48EC"
+   ],
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Account"
+   }
+  },
+  "MindfulBrowseApiDeploymentD441B7E82c5c635b653af029b056724ec3cf01ee": {
+   "Type": "AWS::ApiGateway::Deployment",
+   "Properties": {
+    "Description": "Mindful Browse MVP API",
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "DependsOn": [
+    "CognitoAuthorizerF3215DBC",
+    "MindfulBrowseApieventsOPTIONSF6C401E0",
+    "MindfulBrowseApieventsPOSTEDCB9AEC",
+    "MindfulBrowseApieventsFBF06B4F",
+    "MindfulBrowseApiinsightsGET29AD2792",
+    "MindfulBrowseApiinsightsOPTIONSC3A1AD45",
+    "MindfulBrowseApiinsightsB09EB8C2",
+    "MindfulBrowseApiOPTIONSDFDAF04F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Deployment/Resource",
+    "aws:cdk:do-not-refactor": true
+   }
+  },
+  "MindfulBrowseApiDeploymentStagedev3F0EF78F": {
+   "Type": "AWS::ApiGateway::Stage",
+   "Properties": {
+    "DeploymentId": {
+     "Ref": "MindfulBrowseApiDeploymentD441B7E82c5c635b653af029b056724ec3cf01ee"
+    },
+    "MethodSettings": [
+     {
+      "DataTraceEnabled": true,
+      "HttpMethod": "*",
+      "LoggingLevel": "INFO",
+      "MetricsEnabled": true,
+      "ResourcePath": "/*"
+     }
+    ],
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    },
+    "StageName": "dev"
+   },
+   "DependsOn": [
+    "MindfulBrowseApiAccount5B5C8CAF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/DeploymentStage.dev/Resource"
+   }
+  },
+  "MindfulBrowseApiOPTIONSDFDAF04F": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+        "method.response.header.Access-Control-Allow-Credentials": "'true'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true,
+       "method.response.header.Access-Control-Allow-Credentials": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "MindfulBrowseApiA7DA48EC",
+      "RootResourceId"
+     ]
+    },
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/OPTIONS/Resource"
+   }
+  },
+  "MindfulBrowseApieventsFBF06B4F": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "MindfulBrowseApiA7DA48EC",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "events",
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/events/Resource"
+   }
+  },
+  "MindfulBrowseApieventsOPTIONSF6C401E0": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+        "method.response.header.Access-Control-Allow-Credentials": "'true'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true,
+       "method.response.header.Access-Control-Allow-Credentials": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "MindfulBrowseApieventsFBF06B4F"
+    },
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/events/OPTIONS/Resource"
+   }
+  },
+  "MindfulBrowseApieventsPOSTApiPermissionMindfulBrowseStackdevMindfulBrowseApi95BBD0CAPOSTeventsDF8F53C2": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "EventProcessorFunction5BEEFE86",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:387030538086:",
+       {
+        "Ref": "MindfulBrowseApiA7DA48EC"
+       },
+       "/",
+       {
+        "Ref": "MindfulBrowseApiDeploymentStagedev3F0EF78F"
+       },
+       "/POST/events"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/events/POST/ApiPermission.MindfulBrowseStackdevMindfulBrowseApi95BBD0CA.POST..events"
+   }
+  },
+  "MindfulBrowseApieventsPOSTApiPermissionTestMindfulBrowseStackdevMindfulBrowseApi95BBD0CAPOSTevents5D1FEE1A": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "EventProcessorFunction5BEEFE86",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:387030538086:",
+       {
+        "Ref": "MindfulBrowseApiA7DA48EC"
+       },
+       "/test-invoke-stage/POST/events"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/events/POST/ApiPermission.Test.MindfulBrowseStackdevMindfulBrowseApi95BBD0CA.POST..events"
+   }
+  },
+  "MindfulBrowseApieventsPOSTEDCB9AEC": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "COGNITO_USER_POOLS",
+    "AuthorizerId": {
+     "Ref": "CognitoAuthorizerF3215DBC"
+    },
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "EventProcessorFunction5BEEFE86",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "MindfulBrowseApieventsFBF06B4F"
+    },
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/events/POST/Resource"
+   }
+  },
+  "MindfulBrowseApiinsightsB09EB8C2": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "MindfulBrowseApiA7DA48EC",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "insights",
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/insights/Resource"
+   }
+  },
+  "MindfulBrowseApiinsightsOPTIONSC3A1AD45": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+        "method.response.header.Access-Control-Allow-Credentials": "'true'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true,
+       "method.response.header.Access-Control-Allow-Credentials": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "MindfulBrowseApiinsightsB09EB8C2"
+    },
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/insights/OPTIONS/Resource"
+   }
+  },
+  "MindfulBrowseApiinsightsGETApiPermissionMindfulBrowseStackdevMindfulBrowseApi95BBD0CAGETinsights13EC23A0": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "EventProcessorFunction5BEEFE86",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:387030538086:",
+       {
+        "Ref": "MindfulBrowseApiA7DA48EC"
+       },
+       "/",
+       {
+        "Ref": "MindfulBrowseApiDeploymentStagedev3F0EF78F"
+       },
+       "/GET/insights"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/insights/GET/ApiPermission.MindfulBrowseStackdevMindfulBrowseApi95BBD0CA.GET..insights"
+   }
+  },
+  "MindfulBrowseApiinsightsGETApiPermissionTestMindfulBrowseStackdevMindfulBrowseApi95BBD0CAGETinsightsCE256A6E": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "EventProcessorFunction5BEEFE86",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:387030538086:",
+       {
+        "Ref": "MindfulBrowseApiA7DA48EC"
+       },
+       "/test-invoke-stage/GET/insights"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/insights/GET/ApiPermission.Test.MindfulBrowseStackdevMindfulBrowseApi95BBD0CA.GET..insights"
+   }
+  },
+  "MindfulBrowseApiinsightsGET29AD2792": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "COGNITO_USER_POOLS",
+    "AuthorizerId": {
+     "Ref": "CognitoAuthorizerF3215DBC"
+    },
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "EventProcessorFunction5BEEFE86",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "MindfulBrowseApiinsightsB09EB8C2"
+    },
+    "RestApiId": {
+     "Ref": "MindfulBrowseApiA7DA48EC"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/MindfulBrowseApi/Default/insights/GET/Resource"
+   }
+  },
+  "DashboardBucket5758873D": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "BucketName": "mindful-browse-dashboard-dev-387030538086",
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/DashboardBucket/Resource"
+   }
+  },
+  "DashboardBucketPolicy899268BC": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "DashboardBucket5758873D"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:PutBucketPolicy"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "DashboardBucket5758873D",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "DashboardBucket5758873D",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Principal": {
+        "CanonicalUser": {
+         "Fn::GetAtt": [
+          "DashboardDistributionOrigin1S3OriginCCD8D6E5",
+          "S3CanonicalUserId"
+         ]
+        }
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "DashboardBucket5758873D",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/DashboardBucket/Policy/Resource"
+   }
+  },
+  "DashboardBucketAutoDeleteObjectsCustomResource0A022D13": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "DashboardBucket5758873D"
+    }
+   },
+   "DependsOn": [
+    "DashboardBucketPolicy899268BC"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/DashboardBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-387030538086-us-east-1",
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "DashboardBucket5758873D"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "DashboardDistributionOrigin1S3OriginCCD8D6E5": {
+   "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+   "Properties": {
+    "CloudFrontOriginAccessIdentityConfig": {
+     "Comment": "Identity for MindfulBrowseStackdevDashboardDistributionOrigin1189C2911"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/DashboardDistribution/Origin1/S3Origin/Resource"
+   }
+  },
+  "DashboardDistributionD4569E0E": {
+   "Type": "AWS::CloudFront::Distribution",
+   "Properties": {
+    "DistributionConfig": {
+     "CustomErrorResponses": [
+      {
+       "ErrorCachingMinTTL": 300,
+       "ErrorCode": 404,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      }
+     ],
+     "DefaultCacheBehavior": {
+      "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+      "Compress": true,
+      "TargetOriginId": "MindfulBrowseStackdevDashboardDistributionOrigin1189C2911",
+      "ViewerProtocolPolicy": "redirect-to-https"
+     },
+     "DefaultRootObject": "index.html",
+     "Enabled": true,
+     "HttpVersion": "http2",
+     "IPV6Enabled": true,
+     "Origins": [
+      {
+       "DomainName": {
+        "Fn::GetAtt": [
+         "DashboardBucket5758873D",
+         "RegionalDomainName"
+        ]
+       },
+       "Id": "MindfulBrowseStackdevDashboardDistributionOrigin1189C2911",
+       "S3OriginConfig": {
+        "OriginAccessIdentity": {
+         "Fn::Join": [
+          "",
+          [
+           "origin-access-identity/cloudfront/",
+           {
+            "Ref": "DashboardDistributionOrigin1S3OriginCCD8D6E5"
+           }
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "PriceClass": "PriceClass_100"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/DashboardDistribution/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/3WQ3W7bMAyFn6X3ipame4HUQYEBGxq463UhS6zLRhYDkWqQGnr3QbKzuBe94kfxR+dwozc/b/X6xpx4Zd1h5bHT45MYe1DmxC+jOwczkOv0+Nd0HlTzGipkZakPKKTHZ4a4J/Kl9p8vsKPBYFiW5pdL2niEIMuG6SUrb4bOGT0+pGAFqS5Z8h7igMxIISs0gx5bmgTWuCeP9lz7KmXFdy+GGYT1tgTFd3q8T/YAcm8Y1IRlYKYpXPcs86w89ax/U9+CQKiSzBF7I3AyZz0203Eulnib5I0ifkIsmxZZCyzbI1bZV9xaSymI2sHR03mYD7TInsT01esELTClaKEa+QPyRq4UZ7pU508qZ2U9JfcaKYged8gSsUvVx2PEHosEYP7lijmp/psy8FAGvutYrsn5+m+9d1GKoV+KKPyY5JhENYmFhmvhS7qP9IEOYrGXVSAH+p1/fGzWerPWtzfvjLiKKQgOoNsp/gM8R0gJ2AIAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "MindfulBrowseStack-dev/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "MindfulBrowseApiEndpoint83C28443": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "MindfulBrowseApiA7DA48EC"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "MindfulBrowseApiDeploymentStagedev3F0EF78F"
+      },
+      "/"
+     ]
+    ]
+   }
+  },
+  "TableName": {
+   "Description": "DynamoDB table name",
+   "Value": {
+    "Ref": "MindfulBrowseTable03DA46DE"
+   },
+   "Export": {
+    "Name": "dev-MindfulBrowseTableName"
+   }
+  },
+  "UserPoolId": {
+   "Description": "Cognito User Pool ID",
+   "Value": {
+    "Ref": "MindfulBrowseUserPoolF3B89CCA"
+   },
+   "Export": {
+    "Name": "dev-MindfulBrowseUserPoolId"
+   }
+  },
+  "UserPoolClientId": {
+   "Description": "Cognito User Pool Client ID",
+   "Value": {
+    "Ref": "MindfulBrowseUserPoolClientC5B438C4"
+   },
+   "Export": {
+    "Name": "dev-MindfulBrowseUserPoolClientId"
+   }
+  },
+  "CognitoDomain": {
+   "Description": "Cognito Hosted UI Domain",
+   "Value": {
+    "Ref": "MindfulBrowseUserPoolMindfulBrowseDomainEBBBEB14"
+   },
+   "Export": {
+    "Name": "dev-MindfulBrowseCognitoDomain"
+   }
+  },
+  "CognitoHostedUIUrl": {
+   "Description": "Cognito Hosted UI URL",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "MindfulBrowseUserPoolMindfulBrowseDomainEBBBEB14"
+      },
+      ".auth.us-east-1.amazoncognito.com"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "dev-CognitoHostedUIUrl"
+   }
+  },
+  "EventProcessorFunctionArn": {
+   "Description": "Event processor Lambda function ARN",
+   "Value": {
+    "Fn::GetAtt": [
+     "EventProcessorFunction5BEEFE86",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "dev-EventProcessorFunctionArn"
+   }
+  },
+  "ApiUrl": {
+   "Description": "API Gateway URL",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "MindfulBrowseApiA7DA48EC"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "MindfulBrowseApiDeploymentStagedev3F0EF78F"
+      },
+      "/"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "dev-MindfulBrowseApiUrl"
+   }
+  },
+  "DashboardBucketName": {
+   "Description": "Dashboard S3 bucket name",
+   "Value": {
+    "Ref": "DashboardBucket5758873D"
+   },
+   "Export": {
+    "Name": "dev-DashboardBucketName"
+   }
+  },
+  "DashboardUrl": {
+   "Description": "Dashboard CloudFront URL",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Fn::GetAtt": [
+        "DashboardDistributionD4569E0E",
+        "DomainName"
+       ]
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "dev-DashboardUrl"
+   }
+  },
+  "DistributionId": {
+   "Description": "CloudFront distribution ID",
+   "Value": {
+    "Ref": "DashboardDistributionD4569E0E"
+   },
+   "Export": {
+    "Name": "dev-DistributionId"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

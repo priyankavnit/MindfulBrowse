@@ -1,0 +1,1 @@
+(()=>{"use strict";console.log("Mindful Browse content script loaded")})();

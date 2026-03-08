@@ -1,297 +1,321 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as kms from 'aws-cdk-lib/aws-kms';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Construct } from 'constructs';
 
 export interface MindfulBrowseStackProps extends cdk.StackProps {
-  environment: 'dev' | 'staging' | 'prod';
+  environment: string;
 }
 
 export class MindfulBrowseStack extends cdk.Stack {
+  public readonly table: dynamodb.Table;
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
-  public readonly dataTable: dynamodb.Table;
-  public readonly backupBucket: s3.Bucket;
-  public readonly kmsKey: kms.Key;
-  public readonly vpc: ec2.Vpc;
-  public readonly cluster: ecs.Cluster;
-  public readonly loadBalancer: elbv2.ApplicationLoadBalancer;
+  public readonly eventProcessorFunction: lambda.Function;
+  public readonly api: apigateway.RestApi;
+  public readonly dashboardBucket: s3.Bucket;
+  public readonly distribution: cloudfront.Distribution;
 
   constructor(scope: Construct, id: string, props: MindfulBrowseStackProps) {
     super(scope, id, props);
 
     const { environment } = props;
 
-    // KMS Key for encryption
-    this.kmsKey = new kms.Key(this, 'MindfulBrowseKMSKey', {
-      alias: `mindful-browse-${environment}-key`,
-      description: 'KMS key for Mindful Browse data encryption',
-      enableKeyRotation: true,
-      removalPolicy: environment === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-    });
-
-    // DynamoDB Table for user data and metrics
-    this.dataTable = new dynamodb.Table(this, 'MindfulBrowseDataTable', {
-      tableName: `mindful-browse-data-${environment}`,
-      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
+    // DynamoDB Table for storing events and user profiles
+    this.table = new dynamodb.Table(this, 'MindfulBrowseTable', {
+      tableName: `MindfulBrowse-${environment}`,
+      partitionKey: {
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
+        type: dynamodb.AttributeType.STRING,
+      },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      encryption: dynamodb.TableEncryption.CUSTOMER_MANAGED,
-      encryptionKey: this.kmsKey,
-      timeToLiveAttribute: 'TTL',
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      removalPolicy:
+        environment === 'prod'
+          ? cdk.RemovalPolicy.RETAIN
+          : cdk.RemovalPolicy.DESTROY,
       pointInTimeRecovery: environment === 'prod',
-      removalPolicy: environment === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-    });
-
-    // Global Secondary Index for cross-user analytics
-    this.dataTable.addGlobalSecondaryIndex({
-      indexName: 'GSI1',
-      partitionKey: { name: 'GSI1PK', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'GSI1SK', type: dynamodb.AttributeType.STRING },
-    });
-
-    // S3 Bucket for encrypted backups (opt-in)
-    this.backupBucket = new s3.Bucket(this, 'MindfulBrowseBackupBucket', {
-      bucketName: `mindful-browse-backups-${environment}-${this.account}`,
-      encryption: s3.BucketEncryption.KMS,
-      encryptionKey: this.kmsKey,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      versioned: true,
-      lifecycleRules: [
-        {
-          id: 'DeleteOldVersions',
-          enabled: true,
-          noncurrentVersionExpiration: cdk.Duration.days(30),
-        },
-        {
-          id: 'DeleteIncompleteUploads',
-          enabled: true,
-          abortIncompleteMultipartUploadAfter: cdk.Duration.days(1),
-        },
-      ],
-      removalPolicy: environment === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
     // Cognito User Pool for authentication
     this.userPool = new cognito.UserPool(this, 'MindfulBrowseUserPool', {
-      userPoolName: `mindful-browse-users-${environment}`,
+      userPoolName: `mindful-browse-${environment}`,
       selfSignUpEnabled: true,
-      signInAliases: { email: true },
-      autoVerify: { email: true },
+      signInAliases: {
+        email: true,
+      },
+      autoVerify: {
+        email: true,
+      },
       passwordPolicy: {
         minLength: 8,
         requireLowercase: true,
         requireUppercase: true,
         requireDigits: true,
-        requireSymbols: true,
+        requireSymbols: false,
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      removalPolicy: environment === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      removalPolicy:
+        environment === 'prod'
+          ? cdk.RemovalPolicy.RETAIN
+          : cdk.RemovalPolicy.DESTROY,
     });
 
-    // Cognito User Pool Client
-    this.userPoolClient = new cognito.UserPoolClient(this, 'MindfulBrowseUserPoolClient', {
-      userPool: this.userPool,
-      userPoolClientName: `mindful-browse-client-${environment}`,
-      generateSecret: false, // For browser extension compatibility
-      authFlows: {
-        userSrp: true,
-        userPassword: false, // Disable for security
+    // Cognito Domain for Hosted UI
+    const userPoolDomain = this.userPool.addDomain('MindfulBrowseDomain', {
+      cognitoDomain: {
+        domainPrefix: `mindful-browse-${environment}`,
       },
-      oAuth: {
-        flows: {
-          authorizationCodeGrant: true,
+    });
+
+    // User Pool Client for Dashboard and Extension
+    this.userPoolClient = new cognito.UserPoolClient(
+      this,
+      'MindfulBrowseUserPoolClient',
+      {
+        userPool: this.userPool,
+        userPoolClientName: `mindful-browse-client-${environment}`,
+        authFlows: {
+          userPassword: true,
+          userSrp: true,
         },
-        scopes: [cognito.OAuthScope.EMAIL, cognito.OAuthScope.OPENID, cognito.OAuthScope.PROFILE],
-      },
-      refreshTokenValidity: cdk.Duration.days(30),
-      accessTokenValidity: cdk.Duration.hours(1),
-      idTokenValidity: cdk.Duration.hours(1),
-    });
-
-    // VPC for ECS and other resources
-    this.vpc = new ec2.Vpc(this, 'MindfulBrowseVPC', {
-      vpcName: `mindful-browse-vpc-${environment}`,
-      maxAzs: 2,
-      natGateways: environment === 'prod' ? 2 : 1,
-      subnetConfiguration: [
-        {
-          cidrMask: 24,
-          name: 'Public',
-          subnetType: ec2.SubnetType.PUBLIC,
+        accessTokenValidity: cdk.Duration.hours(1),
+        refreshTokenValidity: cdk.Duration.days(30),
+        idTokenValidity: cdk.Duration.hours(1),
+        preventUserExistenceErrors: true,
+        oAuth: {
+          flows: {
+            authorizationCodeGrant: true,
+          },
+          scopes: [
+            cognito.OAuthScope.OPENID,
+            cognito.OAuthScope.EMAIL,
+            cognito.OAuthScope.PROFILE,
+          ],
+          callbackUrls: [
+            'http://localhost:5173',
+            'http://localhost:5173/',
+            // CloudFront URL will be added after distribution is created
+          ],
+          logoutUrls: [
+            'http://localhost:5173',
+            'http://localhost:5173/',
+            // CloudFront URL will be added after distribution is created
+          ],
         },
-        {
-          cidrMask: 24,
-          name: 'Private',
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      }
+    );
+
+    // Lambda function for event processing
+    this.eventProcessorFunction = new lambda.Function(
+      this,
+      'EventProcessorFunction',
+      {
+        functionName: `mindful-browse-processor-${environment}`,
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'index.handler',
+        code: lambda.Code.fromAsset('../lambda-functions/dist'),
+        memorySize: 512,
+        timeout: cdk.Duration.seconds(10),
+        environment: {
+          TABLE_NAME: this.table.tableName,
+          LOG_LEVEL: environment === 'prod' ? 'INFO' : 'DEBUG',
+          BEDROCK_HAIKU_MODEL_ID:
+            'anthropic.claude-3-haiku-20240307-v1:0',
+          BEDROCK_SONNET_MODEL_ID:
+            'anthropic.claude-3-sonnet-20240229-v1:0',
+          ENVIRONMENT: environment,
         },
-      ],
-    });
+        logRetention: logs.RetentionDays.ONE_WEEK,
+      }
+    );
 
-    // ECS Cluster for backend services
-    this.cluster = new ecs.Cluster(this, 'MindfulBrowseCluster', {
-      clusterName: `mindful-browse-cluster-${environment}`,
-      vpc: this.vpc,
-      containerInsights: true,
-    });
+    // Grant Lambda permissions to DynamoDB
+    this.table.grantReadWriteData(this.eventProcessorFunction);
 
-    // Application Load Balancer
-    this.loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'MindfulBrowseALB', {
-      loadBalancerName: `mindful-browse-alb-${environment}`,
-      vpc: this.vpc,
-      internetFacing: true,
-      securityGroup: this.createALBSecurityGroup(),
-    });
+    // Grant Lambda permissions to Bedrock
+    this.eventProcessorFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['bedrock:InvokeModel'],
+        resources: [
+          `arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
+          `arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`,
+        ],
+      })
+    );
 
-    // Secrets Manager for configuration
-    const apiSecrets = new secretsmanager.Secret(this, 'MindfulBrowseAPISecrets', {
-      secretName: `mindful-browse-api-secrets-${environment}`,
-      description: 'API keys and configuration for Mindful Browse',
-      generateSecretString: {
-        secretStringTemplate: JSON.stringify({ 
-          jwtSecret: '',
-          comprehendRegion: this.region,
-        }),
-        generateStringKey: 'jwtSecret',
-        excludeCharacters: '"@/\\',
+    // API Gateway with Cognito authorizer
+    const authorizer = new apigateway.CognitoUserPoolsAuthorizer(
+      this,
+      'CognitoAuthorizer',
+      {
+        cognitoUserPools: [this.userPool],
+        authorizerName: `mindful-browse-authorizer-${environment}`,
+      }
+    );
+
+    this.api = new apigateway.RestApi(this, 'MindfulBrowseApi', {
+      restApiName: `mindful-browse-api-${environment}`,
+      description: 'Mindful Browse MVP API',
+      deployOptions: {
+        stageName: environment,
+        loggingLevel: apigateway.MethodLoggingLevel.INFO,
+        dataTraceEnabled: true,
+        metricsEnabled: true,
       },
-    });
-
-    // IAM Role for Lambda functions
-    const lambdaRole = new iam.Role(this, 'MindfulBrowseLambdaRole', {
-      roleName: `mindful-browse-lambda-role-${environment}`,
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-      ],
-      inlinePolicies: {
-        DynamoDBAccess: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              actions: [
-                'dynamodb:GetItem',
-                'dynamodb:PutItem',
-                'dynamodb:UpdateItem',
-                'dynamodb:DeleteItem',
-                'dynamodb:Query',
-                'dynamodb:Scan',
-                'dynamodb:BatchGetItem',
-                'dynamodb:BatchWriteItem',
-              ],
-              resources: [this.dataTable.tableArn, `${this.dataTable.tableArn}/index/*`],
-            }),
-          ],
-        }),
-        ComprehendAccess: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              actions: [
-                'comprehend:DetectSentiment',
-                'comprehend:ClassifyDocument',
-                'comprehend:BatchDetectSentiment',
-              ],
-              resources: ['*'],
-            }),
-          ],
-        }),
-        S3Access: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              actions: [
-                's3:GetObject',
-                's3:PutObject',
-                's3:DeleteObject',
-              ],
-              resources: [`${this.backupBucket.bucketArn}/*`],
-            }),
-          ],
-        }),
-        KMSAccess: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              actions: [
-                'kms:Decrypt',
-                'kms:Encrypt',
-                'kms:GenerateDataKey',
-              ],
-              resources: [this.kmsKey.keyArn],
-            }),
-          ],
-        }),
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: [
+          'Content-Type',
+          'Authorization',
+          'X-Amz-Date',
+          'X-Api-Key',
+          'X-Amz-Security-Token',
+        ],
+        allowCredentials: true,
       },
+      cloudWatchRole: true,
     });
 
-    // Output important values
+    // Lambda integration
+    const lambdaIntegration = new apigateway.LambdaIntegration(
+      this.eventProcessorFunction,
+      {
+        proxy: true,
+      }
+    );
+
+    // POST /events endpoint
+    const eventsResource = this.api.root.addResource('events');
+    eventsResource.addMethod('POST', lambdaIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // GET /insights endpoint
+    const insightsResource = this.api.root.addResource('insights');
+    insightsResource.addMethod('GET', lambdaIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // S3 bucket for dashboard static hosting
+    this.dashboardBucket = new s3.Bucket(this, 'DashboardBucket', {
+      bucketName: `mindful-browse-dashboard-${environment}-${this.account}`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy:
+        environment === 'prod'
+          ? cdk.RemovalPolicy.RETAIN
+          : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: environment !== 'prod',
+    });
+
+    // CloudFront distribution for dashboard
+    this.distribution = new cloudfront.Distribution(
+      this,
+      'DashboardDistribution',
+      {
+        defaultBehavior: {
+          origin: new origins.S3Origin(this.dashboardBucket),
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        },
+        defaultRootObject: 'index.html',
+        errorResponses: [
+          {
+            httpStatus: 404,
+            responseHttpStatus: 200,
+            responsePagePath: '/index.html',
+            ttl: cdk.Duration.minutes(5),
+          },
+        ],
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      }
+    );
+
+    // Output table name
+    new cdk.CfnOutput(this, 'TableName', {
+      value: this.table.tableName,
+      description: 'DynamoDB table name',
+      exportName: `${environment}-MindfulBrowseTableName`,
+    });
+
+    // Output Cognito User Pool ID
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.userPool.userPoolId,
       description: 'Cognito User Pool ID',
-      exportName: `mindful-browse-user-pool-id-${environment}`,
+      exportName: `${environment}-MindfulBrowseUserPoolId`,
     });
 
+    // Output Cognito User Pool Client ID
     new cdk.CfnOutput(this, 'UserPoolClientId', {
       value: this.userPoolClient.userPoolClientId,
       description: 'Cognito User Pool Client ID',
-      exportName: `mindful-browse-user-pool-client-id-${environment}`,
+      exportName: `${environment}-MindfulBrowseUserPoolClientId`,
     });
 
-    new cdk.CfnOutput(this, 'DataTableName', {
-      value: this.dataTable.tableName,
-      description: 'DynamoDB Data Table Name',
-      exportName: `mindful-browse-data-table-name-${environment}`,
+    // Output Cognito Domain
+    new cdk.CfnOutput(this, 'CognitoDomain', {
+      value: userPoolDomain.domainName,
+      description: 'Cognito Hosted UI Domain',
+      exportName: `${environment}-MindfulBrowseCognitoDomain`,
     });
 
-    new cdk.CfnOutput(this, 'BackupBucketName', {
-      value: this.backupBucket.bucketName,
-      description: 'S3 Backup Bucket Name',
-      exportName: `mindful-browse-backup-bucket-name-${environment}`,
+    // Output Cognito Hosted UI URL
+    new cdk.CfnOutput(this, 'CognitoHostedUIUrl', {
+      value: `https://${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
+      description: 'Cognito Hosted UI URL',
+      exportName: `${environment}-CognitoHostedUIUrl`,
     });
 
-    new cdk.CfnOutput(this, 'KMSKeyId', {
-      value: this.kmsKey.keyId,
-      description: 'KMS Key ID for encryption',
-      exportName: `mindful-browse-kms-key-id-${environment}`,
+    // Output Lambda function ARN
+    new cdk.CfnOutput(this, 'EventProcessorFunctionArn', {
+      value: this.eventProcessorFunction.functionArn,
+      description: 'Event processor Lambda function ARN',
+      exportName: `${environment}-EventProcessorFunctionArn`,
     });
 
-    new cdk.CfnOutput(this, 'LoadBalancerDNS', {
-      value: this.loadBalancer.loadBalancerDnsName,
-      description: 'Application Load Balancer DNS Name',
-      exportName: `mindful-browse-alb-dns-${environment}`,
-    });
-  }
-
-  private createALBSecurityGroup(): ec2.SecurityGroup {
-    const sg = new ec2.SecurityGroup(this, 'ALBSecurityGroup', {
-      vpc: this.vpc,
-      description: 'Security group for Mindful Browse Application Load Balancer',
-      allowAllOutbound: true,
+    // Output API Gateway URL
+    new cdk.CfnOutput(this, 'ApiUrl', {
+      value: this.api.url,
+      description: 'API Gateway URL',
+      exportName: `${environment}-MindfulBrowseApiUrl`,
     });
 
-    sg.addIngressRule(
-      ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(80),
-      'Allow HTTP traffic'
-    );
+    // Output S3 bucket name
+    new cdk.CfnOutput(this, 'DashboardBucketName', {
+      value: this.dashboardBucket.bucketName,
+      description: 'Dashboard S3 bucket name',
+      exportName: `${environment}-DashboardBucketName`,
+    });
 
-    sg.addIngressRule(
-      ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(443),
-      'Allow HTTPS traffic'
-    );
+    // Output CloudFront distribution domain
+    new cdk.CfnOutput(this, 'DashboardUrl', {
+      value: `https://${this.distribution.distributionDomainName}`,
+      description: 'Dashboard CloudFront URL',
+      exportName: `${environment}-DashboardUrl`,
+    });
 
-    return sg;
+    // Output CloudFront distribution ID
+    new cdk.CfnOutput(this, 'DistributionId', {
+      value: this.distribution.distributionId,
+      description: 'CloudFront distribution ID',
+      exportName: `${environment}-DistributionId`,
+    });
   }
 }

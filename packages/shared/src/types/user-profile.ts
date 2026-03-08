@@ -35,7 +35,7 @@ export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 // User Profile Schema - main user data structure
 export const UserProfileSchema = z.object({
   PK: z.string(), // USER#${userId}
-  SK: z.string().literal('PROFILE'),
+  SK: z.literal('PROFILE'),
   userId: z.string(),
   email: z.string().email(),
   preferences: UserPreferencesSchema.default({}),

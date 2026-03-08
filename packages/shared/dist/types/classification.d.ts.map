@@ -1,0 +1,1 @@
+{"version":3,"file":"classification.d.ts","sourceRoot":"","sources":["../../src/types/classification.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,MAAM,WAAW,cAAc;IAC7B,SAAS,EAAE,UAAU,GAAG,SAAS,GAAG,UAAU,CAAC;IAC/C,QAAQ,EAAE,MAAM,GAAG,QAAQ,GAAG,eAAe,GAAG,WAAW,GAAG,OAAO,CAAC;CACvE;AAED;;GAEG;AACH,MAAM,WAAW,aAAa;IAC5B,MAAM,EAAE,MAAM,CAAC;IACf,OAAO,EAAE,MAAM,EAAE,CAAC;CACnB"}

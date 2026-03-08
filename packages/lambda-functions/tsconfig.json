@@ -3,9 +3,13 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node", "jest", "aws-lambda"]
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node"
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

@@ -1,10 +1,5 @@
-// Export all types and schemas
+// Export all types
 export * from './types/browsing-event';
-export * from './types/wellbeing-metrics';
-export * from './types/user-profile';
+export * from './types/stored-event';
+export * from './types/classification';
 export * from './types/insights';
-
-// Export utility functions
-export * from './utils/validation';
-export * from './utils/constants';
-export * from './utils/date-helpers';

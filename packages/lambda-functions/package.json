@@ -1,27 +1,32 @@
 {
   "name": "@mindful-browse/lambda-functions",
   "version": "1.0.0",
-  "description": "AWS Lambda functions for data processing and wellbeing metrics calculation",
-  "private": true,
+  "description": "AWS Lambda functions for Mindful Browse MVP",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc -w",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
-    "test:property": "jest --testPathPattern=property",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "package": "npm run build && npm run package:functions",
-    "package:functions": "cd dist && zip -r ../lambda-functions.zip ."
+    "test:integration": "jest --testPathPattern=integration",
+    "lint": "eslint src --ext .ts"
   },
+  "keywords": [
+    "mindful-browse",
+    "lambda",
+    "aws"
+  ],
+  "author": "Mindful Browse Team",
+  "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.370.0",
-    "@aws-sdk/client-s3": "^3.370.0",
-    "@aws-sdk/client-comprehend": "^3.370.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.370.0",
-    "zod": "^3.22.0"
+    "@aws-sdk/client-bedrock-runtime": "^3.400.0",
+    "@aws-sdk/client-dynamodb": "^3.400.0",
+    "@aws-sdk/lib-dynamodb": "^3.400.0",
+    "@mindful-browse/shared": "^1.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",
-    "fast-check": "^3.0.0"
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
   }
 }

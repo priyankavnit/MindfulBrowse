@@ -1,23 +1,24 @@
 {
   "name": "@mindful-browse/shared",
   "version": "1.0.0",
-  "description": "Shared types, utilities, and constants for Mindful Browse platform",
-  "private": true,
+  "description": "Shared types and utilities for Mindful Browse MVP",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
-    "test:property": "jest --testPathPattern=property",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint": "eslint src --ext .ts"
   },
-  "dependencies": {
-    "zod": "^3.22.0"
-  },
+  "keywords": [
+    "mindful-browse",
+    "types",
+    "shared"
+  ],
+  "author": "Mindful Browse Team",
+  "license": "MIT",
   "devDependencies": {
-    "fast-check": "^3.0.0"
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
   }
 }

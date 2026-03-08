@@ -7,13 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "install": "npm install",
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "test:unit": "npm run test:unit --workspaces",
-    "test:property": "npm run test:property --workspaces",
-    "test:integration": "npm run test:integration --workspaces",
     "lint": "npm run lint --workspaces",
     "deploy": "npm run deploy --workspace=packages/infrastructure",
     "deploy:staging": "npm run deploy:staging --workspace=packages/infrastructure",
@@ -22,19 +17,15 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "typescript": "^5.0.0",
-    "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
     "prettier": "^3.0.0",
-    "jest": "^29.0.0",
-    "@types/jest": "^29.0.0",
-    "ts-jest": "^29.0.0",
-    "fast-check": "^3.0.0"
+    "typescript": "^5.0.0"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=20.0.0 <21.0.0",
+    "npm": ">=10.0.0"
   },
   "repository": {
     "type": "git",
@@ -49,5 +40,8 @@
     "wellbeing"
   ],
   "author": "Mindful Browse Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "source-map-support": "^0.5.21"
+  }
 }
