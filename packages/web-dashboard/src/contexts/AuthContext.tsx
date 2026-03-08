@@ -4,16 +4,9 @@ import { Amplify, Auth } from 'aws-amplify';
 // Configure Amplify with Cognito settings from environment variables
 Amplify.configure({
   Auth: {
-    region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
-    userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || '',
-    userPoolWebClientId: import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID || '',
-    oauth: {
-      domain: import.meta.env.VITE_COGNITO_DOMAIN || '',
-      scope: ['openid', 'email', 'profile'],
-      redirectSignIn: window.location.origin,
-      redirectSignOut: window.location.origin,
-      responseType: 'code',
-    },
+    region: import.meta.env.VITE_REGION || 'us-east-1',
+    userPoolId: import.meta.env.VITE_USER_POOL_ID || '',
+    userPoolWebClientId: import.meta.env.VITE_CLIENT_ID || '',
   },
 });
 
@@ -22,7 +15,7 @@ interface AuthContextType {
   authToken: string | null;
   userEmail: string | null;
   isLoading: boolean;
-  login: () => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -82,10 +75,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
   };
 
-  const login = async () => {
+  const login = async (username: string, password: string) => {
     try {
-      // Redirect to Cognito Hosted UI for login
-      await Auth.federatedSignIn();
+      // Sign in with username and password
+      const user = await Auth.signIn(username, password);
+      
+      // Get current session with tokens
+      const session = await Auth.currentSession();
+      
+      if (session && session.isValid()) {
+        const token = session.getIdToken().getJwtToken();
+        
+        // Store token in localStorage for persistence
+        localStorage.setItem('authToken', token);
+        
+        setAuthToken(token);
+        setUserEmail(user.attributes?.email || username);
+        setIsAuthenticated(true);
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;

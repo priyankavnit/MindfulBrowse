@@ -25,6 +25,7 @@
     }
   ],
   "action": {
-    "default_title": "Mindful Browse"
+    "default_title": "Mindful Browse",
+    "default_popup": "popup.html"
   }
 }

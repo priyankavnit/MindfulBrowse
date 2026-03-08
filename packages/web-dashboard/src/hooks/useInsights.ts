@@ -51,9 +51,9 @@ export function useInsights(): UseInsightsResult {
       if (err instanceof ApiError) {
         // Handle authentication errors by redirecting to login
         if (err.isAuthError) {
-          console.error('Authentication error, redirecting to login:', err.message);
-          // Redirect to login page
-          await login();
+          console.error('Authentication error, user needs to re-login:', err.message);
+          // Clear auth state and let ProtectedRoute redirect to login
+          setError('Session expired. Please log in again.');
           return;
         }
         

@@ -88,19 +88,33 @@ echo ""
 
 # Upload to S3
 echo -e "${YELLOW}Uploading to S3...${NC}"
-aws s3 sync dist/ s3://$BUCKET_NAME/ --delete --no-verify-ssl
 
-# Set cache headers for assets
-aws s3 cp s3://$BUCKET_NAME/ s3://$BUCKET_NAME/ \
-    --recursive \
-    --metadata-directive REPLACE \
-    --cache-control "public, max-age=31536000" \
-    --exclude "index.html" \
-    --exclude "*.html" \
-    --no-verify-ssl
+# Upload HTML files
+aws s3 sync dist/ s3://$BUCKET_NAME/ --delete --no-verify-ssl \
+    --exclude "assets/*" \
+    --content-type "text/html"
 
-# index.html should not be cached
+# Upload JS files with correct MIME type
+aws s3 sync dist/assets/ s3://$BUCKET_NAME/assets/ --no-verify-ssl \
+    --exclude "*" --include "*.js" \
+    --content-type "application/javascript" \
+    --cache-control "public, max-age=31536000"
+
+# Upload CSS files with correct MIME type
+aws s3 sync dist/assets/ s3://$BUCKET_NAME/assets/ --no-verify-ssl \
+    --exclude "*" --include "*.css" \
+    --content-type "text/css" \
+    --cache-control "public, max-age=31536000"
+
+# Upload map files
+aws s3 sync dist/assets/ s3://$BUCKET_NAME/assets/ --no-verify-ssl \
+    --exclude "*" --include "*.map" \
+    --content-type "application/json" \
+    --cache-control "public, max-age=31536000"
+
+# Upload index.html with no cache
 aws s3 cp dist/index.html s3://$BUCKET_NAME/index.html \
+    --content-type "text/html" \
     --cache-control "no-cache, no-store, must-revalidate" \
     --no-verify-ssl
 
