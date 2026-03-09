@@ -72,6 +72,10 @@ cdk bootstrap aws://$ACCOUNT_ID/us-east-1
 
 ### Load Browser Extension
 
+ Users, please download the Browser extension from the page below and follow the steps.
+ [The extension is hosted via S3 bucket]
+https://d3tuctcemzeygi.cloudfront.net/download.html
+
 **Chrome/Edge:**
 1. Go to `chrome://extensions/`
 2. Enable "Developer mode"
