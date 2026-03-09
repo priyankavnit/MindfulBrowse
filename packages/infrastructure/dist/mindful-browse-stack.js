@@ -116,14 +116,6 @@ export class MindfulBrowseStack extends cdk.Stack {
             actions: ['comprehend:DetectSentiment'],
             resources: ['*'],
         }));
-        // Grant Lambda permissions to Bedrock (for nudge generation)
-        this.eventProcessorFunction.addToRolePolicy(new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: ['bedrock:InvokeModel'],
-            resources: [
-                `arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`,
-            ],
-        }));
         // API Gateway with Cognito authorizer
         const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
             cognitoUserPools: [this.userPool],

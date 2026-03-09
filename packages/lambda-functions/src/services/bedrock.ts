@@ -1,21 +1,10 @@
-import {
-  BedrockRuntimeClient,
-  InvokeModelCommand,
-} from '@aws-sdk/client-bedrock-runtime';
 import { ComprehendClient, DetectSentimentCommand } from '@aws-sdk/client-comprehend';
 import { Classification } from '@mindful-browse/shared';
 import { logger } from '../utils/logger';
 
-const bedrockClient = new BedrockRuntimeClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-
 const comprehendClient = new ComprehendClient({
   region: process.env.AWS_REGION || 'us-east-1',
 });
-
-const NUDGE_MODEL_ID = 'anthropic.claude-3-sonnet-20240229-v1:0';
-const TIMEOUT_MS = 5000;
 
 // Domain heuristic mapping for faster and more accurate classification
 export const DOMAIN_HEURISTICS: Record<string, string> = {
@@ -281,69 +270,38 @@ export interface NudgeResponse {
   choices: string[];
 }
 
+// Pre-defined gentle nudges for different durations
+const GENTLE_NUDGES = [
+  {
+    prompt: "You've been browsing for a while. How about a quick break?",
+    choices: ['Take a 5-min break', 'Stretch & hydrate', 'Keep browsing'],
+  },
+  {
+    prompt: "Time flies when browsing! Want to take a moment to rest your eyes?",
+    choices: ['Rest my eyes', 'Stretch a bit', 'Continue'],
+  },
+  {
+    prompt: "Looks like you've been scrolling for quite some time. Maybe stretch your legs or grab some water?",
+    choices: ['Take a walk', 'Get some water', 'Keep going'],
+  },
+  {
+    prompt: "You've been at it for a while. A short break might feel good?",
+    choices: ['Take a break', 'Do some stretches', 'Not now'],
+  },
+  {
+    prompt: "Been browsing for a bit. How about a quick pause to recharge?",
+    choices: ['Pause & recharge', 'Quick stretch', 'Continue browsing'],
+  },
+];
+
 export async function generateReflectionPrompt(
   durationMinutes: number
 ): Promise<NudgeResponse> {
-  const prompt = `The user has been browsing for ${durationMinutes} minutes with high scroll activity.
-
-Generate a gentle, caring nudge with 2-3 actionable choices. The tone should be warm, non-judgmental, and supportive - like a friend checking in.
-
-Format as JSON:
-{
-  "prompt": "Short, gentle message (max 80 chars)",
-  "choices": [
-    "Take a 5-minute break",
-    "Stretch and hydrate",
-    "Continue browsing"
-  ]
-}
-
-Examples of good prompts:
-- "Looks like you've been browsing for quite some time. Maybe stretch your legs or grab some water?"
-- "You've been scrolling for a while. How about a quick break?"
-- "Time flies when browsing! Want to take a moment to rest your eyes?"
-
-Keep it casual, caring, and never preachy. Generate one gentle nudge:`;
-
-  try {
-    const command = new InvokeModelCommand({
-      modelId: NUDGE_MODEL_ID,
-      body: JSON.stringify({
-        anthropic_version: 'bedrock-2023-05-31',
-        max_tokens: 150,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      }),
-    });
-
-    const response = await bedrockClient.send(command);
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-
-    // Extract JSON from response
-    const content = responseBody.content[0].text;
-    const nudge = JSON.parse(content);
-
-    // Validate response format
-    if (
-      !nudge.prompt ||
-      !nudge.choices ||
-      !Array.isArray(nudge.choices) ||
-      nudge.choices.length < 2
-    ) {
-      throw new Error('Invalid nudge format from Bedrock');
-    }
-
-    return nudge;
-  } catch (error) {
-    logger.error('Bedrock nudge generation failed', { error });
-    // Return default gentle nudge
-    return {
-      prompt: "You've been browsing for a while. How about a quick break?",
-      choices: ['Take a 5-min break', 'Stretch & hydrate', 'Keep browsing'],
-    };
-  }
+  // Select a nudge based on duration (adds variety)
+  const index = Math.floor(durationMinutes / 5) % GENTLE_NUDGES.length;
+  const nudge = GENTLE_NUDGES[index];
+  
+  logger.info('Generated nudge', { durationMinutes, nudgeIndex: index });
+  
+  return nudge;
 }

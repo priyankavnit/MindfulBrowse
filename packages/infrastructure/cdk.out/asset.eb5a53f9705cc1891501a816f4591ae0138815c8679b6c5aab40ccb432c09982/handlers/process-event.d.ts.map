@@ -1,0 +1,1 @@
+{"version":3,"file":"process-event.d.ts","sourceRoot":"","sources":["../../src/handlers/process-event.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,oBAAoB,EAAE,qBAAqB,EAAE,MAAM,YAAY,CAAC;AAYzE,wBAAsB,YAAY,CAChC,KAAK,EAAE,oBAAoB,EAC3B,MAAM,EAAE,MAAM,GACb,OAAO,CAAC,qBAAqB,CAAC,CAyHhC"}
