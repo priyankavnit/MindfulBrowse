@@ -3,6 +3,7 @@
  */
 export interface BrowsingEvent {
   domain: string;
+  url: string; // Full URL for better AI sentiment analysis
   title: string;
   timestamp: number;
   duration_seconds: number;

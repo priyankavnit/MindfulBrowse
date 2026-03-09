@@ -133,6 +133,9 @@ async function handleLogin() {
       apiUrl: API_URL,
     });
     
+    // Notify background script that user logged in
+    chrome.runtime.sendMessage({ type: 'LOGIN_SUCCESS' });
+    
     showMessage('Successfully logged in!', 'success');
     passwordInput.value = '';
     

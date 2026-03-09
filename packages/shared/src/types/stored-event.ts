@@ -7,6 +7,7 @@ export interface StoredEvent {
   userId: string;
   timestamp: number;
   domain: string;
+  url: string; // Full URL for better AI analysis
   title: string;
   duration_seconds: number;
   scroll_count: number;

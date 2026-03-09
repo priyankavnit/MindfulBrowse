@@ -110,12 +110,17 @@ export class MindfulBrowseStack extends cdk.Stack {
         });
         // Grant Lambda permissions to DynamoDB
         this.table.grantReadWriteData(this.eventProcessorFunction);
-        // Grant Lambda permissions to Bedrock
+        // Grant Lambda permissions to Amazon Comprehend
+        this.eventProcessorFunction.addToRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['comprehend:DetectSentiment'],
+            resources: ['*'],
+        }));
+        // Grant Lambda permissions to Bedrock (for nudge generation)
         this.eventProcessorFunction.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['bedrock:InvokeModel'],
             resources: [
-                `arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`,
                 `arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0`,
             ],
         }));

@@ -25,7 +25,7 @@
             background: white;
             border-radius: 20px;
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
         
@@ -39,6 +39,7 @@
             color: #666;
             margin-bottom: 30px;
             font-size: 16px;
+            line-height: 1.5;
         }
         
         .download-btn {
@@ -57,6 +58,19 @@
         .download-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .privacy-link {
+            display: inline-block;
+            margin-left: 15px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .privacy-link:hover {
+            text-decoration: underline;
         }
         
         .instructions {
@@ -78,7 +92,8 @@
         }
         
         .instructions li {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+            font-size: 15px;
         }
         
         .instructions code {
@@ -90,21 +105,21 @@
         }
         
         .note {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
             padding: 15px;
             margin-top: 20px;
             border-radius: 4px;
         }
         
         .note strong {
-            color: #856404;
+            color: #1565c0;
         }
         
         .features {
             margin-top: 30px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
         
@@ -125,46 +140,86 @@
             font-size: 14px;
             line-height: 1.6;
         }
+        
+        .setup-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .setup-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .setup-section p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🧘 Mindful Browse</h1>
-        <p class="subtitle">Track your browsing patterns and develop healthier digital habits</p>
+        <p class="subtitle">Understand your digital habits and build a healthier relationship with online content</p>
         
-        <a href="/downloads/mindful-browse-extension-latest.zip" class="download-btn" download>
-            ⬇️ Download Extension
-        </a>
+        <div>
+            <a href="/downloads/mindful-browse-extension-latest.zip" class="download-btn" download>
+                ⬇️ Download Extension
+            </a>
+            <a href="/privacy.html" class="privacy-link" target="_blank">🔒 Privacy Policy</a>
+        </div>
         
         <div class="features">
             <div class="feature">
-                <h3>📊 Insights Dashboard</h3>
-                <p>View your browsing patterns, sentiment analysis, and content categories</p>
+                <h3>📊 Track Your Habits</h3>
+                <p>See how much time you spend on different types of content</p>
+            </div>
+            <div class="feature">
+                <h3>🧠 Understand Patterns</h3>
+                <p>Learn how your browsing affects your emotional wellbeing</p>
+            </div>
+            <div class="feature">
+                <h3>💡 Gentle Reminders</h3>
+                <p>Get helpful nudges when you might be doomscrolling</p>
             </div>
             <div class="feature">
                 <h3>🔒 Privacy First</h3>
-                <p>Your data stays private. Only metadata is tracked, not content</p>
-            </div>
-            <div class="feature">
-                <h3>🎯 Doomscroll Detection</h3>
-                <p>Get gentle nudges when unhealthy browsing patterns are detected</p>
+                <p>Your data is private and secure - we never see your content</p>
             </div>
         </div>
         
         <div class="instructions">
-            <h2>Installation Instructions</h2>
+            <h2>How to Get Started</h2>
             <ol>
-                <li>Click the download button above to get the extension ZIP file</li>
-                <li>Extract the ZIP file to a folder on your computer</li>
-                <li>Open Chrome and navigate to <code>chrome://extensions</code></li>
-                <li>Enable <strong>Developer mode</strong> using the toggle in the top-right corner</li>
-                <li>Click <strong>Load unpacked</strong> button</li>
-                <li>Select the folder where you extracted the extension</li>
-                <li>The Mindful Browse extension should now appear in your toolbar!</li>
+                <li><strong>Download:</strong> Click the download button above to save the extension file</li>
+                <li><strong>Extract:</strong> Unzip the downloaded file to any folder on your computer</li>
+                <li><strong>Open Chrome Extensions:</strong> Type <code>chrome://extensions</code> in your browser's address bar and press Enter</li>
+                <li><strong>Enable Developer Mode:</strong> Look for a toggle switch in the top-right corner and turn it on</li>
+                <li><strong>Load Extension:</strong> Click the "Load unpacked" button and select the folder where you unzipped the files</li>
+                <li><strong>Sign In:</strong> Click the Mindful Browse icon in your toolbar and log in with your account</li>
+                <li><strong>Start Browsing:</strong> That's it! The extension will now track your browsing patterns</li>
             </ol>
             
+            <div class="setup-section">
+                <h3>After Installation</h3>
+                <p>Once you're logged in, the extension works automatically in the background. You can:</p>
+                <ul style="margin-left: 20px; color: #555; line-height: 1.8;">
+                    <li>Click the extension icon anytime to check your login status</li>
+                    <li>Visit your dashboard to see insights about your browsing habits</li>
+                    <li>Receive gentle notifications when unhealthy patterns are detected</li>
+                </ul>
+            </div>
+            
             <div class="note">
-                <strong>Note:</strong> This is a development version of the extension. For production use, the extension would be published to the Chrome Web Store for easier installation.
+                <strong>Early Access:</strong> You're trying out our MVP prototype! This version requires manual installation, but when we officially launch, Mindful Browse will be available directly from the Chrome Web Store for one-click installation. Thanks for being an early supporter!
+            </div>
+            
+            <div class="note" style="margin-top: 15px;">
+                <strong>Need Help?</strong> If you have any questions or run into issues, please contact support or check our FAQ section.
             </div>
         </div>
     </div>

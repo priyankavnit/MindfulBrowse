@@ -1,13 +1,11 @@
 import { StoredEvent } from '@mindful-browse/shared';
 
 const SESSION_GAP_MS = 300000; // 5 minutes
-const MIN_DOOMSCROLL_DURATION = 900; // 15 minutes in seconds
-const NEGATIVE_RATIO_THRESHOLD = 0.6;
-const NEWS_RATIO_THRESHOLD = 0.5;
-const HIGH_SCROLL_VELOCITY_THRESHOLD = 500; // pixels per second
-const HIGH_SCROLL_COUNT_THRESHOLD = 20; // per event
-const DOMAIN_REPETITION_RATIO_THRESHOLD = 0.7;
-const DOMAIN_REPETITION_COUNT_THRESHOLD = 10;
+const MIN_DOOMSCROLL_DURATION = 720; // 12 minutes in seconds
+const HIGH_SCROLL_VELOCITY_THRESHOLD = 700; // pixels per second
+const HIGH_SCROLL_COUNT_THRESHOLD = 30; // per event
+const DOMAIN_REPETITION_RATIO_THRESHOLD = 0.7; // 70%
+const DOOMSCROLL_CATEGORIES = ['social', 'news', 'entertainment'];
 
 export function groupIntoSessions(events: StoredEvent[]): StoredEvent[][] {
   if (events.length === 0) {
@@ -47,35 +45,23 @@ export function isDoomscrollSession(session: StoredEvent[]): boolean {
     0
   );
 
-  // Must exceed 15 minutes (900 seconds)
-  if (totalDuration <= MIN_DOOMSCROLL_DURATION) {
+  // Must be at least 12 minutes (720 seconds)
+  if (totalDuration < MIN_DOOMSCROLL_DURATION) {
     return false;
   }
 
-  // Calculate negative content ratio
-  const negativeEvents = session.filter((e) => e.sentiment === 'negative');
-  const negativeRatio = negativeEvents.length / session.length;
-
-  // Must exceed 60% negative content
-  if (negativeRatio <= NEGATIVE_RATIO_THRESHOLD) {
-    return false;
-  }
-
-  // Must be primarily news content
-  const newsEvents = session.filter((e) => e.category === 'news');
-  const newsRatio = newsEvents.length / session.length;
-
-  // Majority must be news
-  if (newsRatio <= NEWS_RATIO_THRESHOLD) {
-    return false;
-  }
-
-  // Check behavioral signals
+  // Check behavioral signals (scroll activity)
   const hasHighScrollActivity = checkHighScrollActivity(session);
+  if (!hasHighScrollActivity) {
+    return false;
+  }
+
+  // Check category OR domain repetition
+  const hasDoomscrollCategory = checkDoomscrollCategory(session);
   const hasDomainRepetition = checkDomainRepetition(session);
 
-  // Doomscroll detected if sentiment/category criteria met AND (high scroll activity OR domain repetition)
-  return hasHighScrollActivity || hasDomainRepetition;
+  // Doomscroll detected if: duration >= 12min AND high scroll activity AND (doomscroll category OR domain repetition)
+  return hasDoomscrollCategory || hasDomainRepetition;
 }
 
 export function checkHighScrollActivity(session: StoredEvent[]): boolean {
@@ -94,13 +80,27 @@ export function checkHighScrollActivity(session: StoredEvent[]): boolean {
   const totalScrolls = session.reduce((sum, e) => sum + e.scroll_count, 0);
   const avgScrollCount = totalScrolls / session.length;
 
-  // High scroll activity indicators:
-  // - Average scroll velocity > 500 pixels/second (rapid scanning)
-  // - OR average scroll count > 20 per event (infinite scrolling)
+  // High scroll activity indicators (any one triggers):
+  // - Average scroll velocity >= 700 pixels/second (rapid scanning)
+  // - OR average scroll count >= 30 per event (frequent scrolling)
   return (
-    avgVelocity > HIGH_SCROLL_VELOCITY_THRESHOLD ||
-    avgScrollCount > HIGH_SCROLL_COUNT_THRESHOLD
+    avgVelocity >= HIGH_SCROLL_VELOCITY_THRESHOLD ||
+    avgScrollCount >= HIGH_SCROLL_COUNT_THRESHOLD
   );
+}
+
+export function checkDoomscrollCategory(session: StoredEvent[]): boolean {
+  if (session.length === 0) {
+    return false;
+  }
+
+  // Check if majority of events are in doomscroll categories (social, news, entertainment)
+  const doomscrollCategoryEvents = session.filter((e) =>
+    DOOMSCROLL_CATEGORIES.includes(e.category)
+  );
+
+  // At least 50% of events should be in doomscroll categories
+  return doomscrollCategoryEvents.length >= session.length * 0.5;
 }
 
 export function checkDomainRepetition(session: StoredEvent[]): boolean {
@@ -126,13 +126,8 @@ export function checkDomainRepetition(session: StoredEvent[]): boolean {
   // Calculate dominant domain ratio
   const dominantRatio = maxCount / session.length;
 
-  // Domain repetition is high when:
-  // - More than 70% of events from same domain
-  // - OR more than 10 events from same domain
-  return (
-    dominantRatio > DOMAIN_REPETITION_RATIO_THRESHOLD ||
-    maxCount > DOMAIN_REPETITION_COUNT_THRESHOLD
-  );
+  // Domain repetition is high when >= 70% of events from same domain
+  return dominantRatio >= DOMAIN_REPETITION_RATIO_THRESHOLD;
 }
 
 export async function detectDoomscroll(

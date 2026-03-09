@@ -41,7 +41,8 @@ export async function processEvent(
       // Classify content with Bedrock
       const classification = await classifyContent(
         browsingEvent.domain,
-        browsingEvent.title
+        browsingEvent.title,
+        browsingEvent.url
       );
       sentiment = classification.sentiment;
       category = classification.category;
@@ -54,6 +55,7 @@ export async function processEvent(
       userId,
       timestamp: browsingEvent.timestamp,
       domain: browsingEvent.domain,
+      url: browsingEvent.url || browsingEvent.domain, // Use URL if available, fallback to domain
       title: browsingEvent.title,
       duration_seconds: browsingEvent.duration_seconds,
       scroll_count: browsingEvent.scroll_count,
@@ -85,9 +87,10 @@ export async function processEvent(
       const isEligible = await checkNudgeEligibility(userId);
 
       if (isEligible) {
-        // Calculate session duration in minutes
+        // Calculate session duration in minutes (include current event)
         const sessionDuration = Math.round(
-          recentEvents.reduce((sum, e) => sum + e.duration_seconds, 0) / 60
+          (recentEvents.reduce((sum, e) => sum + e.duration_seconds, 0) + 
+           storedEvent.duration_seconds) / 60
         );
 
         // Generate reflection prompt

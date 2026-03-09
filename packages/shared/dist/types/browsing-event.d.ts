@@ -3,6 +3,7 @@
  */
 export interface BrowsingEvent {
     domain: string;
+    url: string;
     title: string;
     timestamp: number;
     duration_seconds: number;

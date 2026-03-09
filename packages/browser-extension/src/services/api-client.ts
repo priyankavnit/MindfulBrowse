@@ -1,12 +1,26 @@
 import { BrowsingEvent, NudgeResponse } from '@mindful-browse/shared';
+import { config } from '../config';
 
 export class ApiClient {
-  private apiUrl: string = '';
+  private apiUrl: string = config.apiUrl; // Use config as default
   
   constructor() {
-    // Load API URL from storage
+    // Load API URL from storage (overrides config if set)
     chrome.storage.sync.get(['apiUrl'], (result) => {
-      this.apiUrl = result.apiUrl || '';
+      if (result.apiUrl) {
+        this.apiUrl = result.apiUrl;
+        console.log('[ApiClient] API URL loaded from storage:', this.apiUrl);
+      } else {
+        console.log('[ApiClient] Using default API URL from config:', this.apiUrl);
+      }
+    });
+    
+    // Listen for storage changes
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'sync' && changes.apiUrl) {
+        this.apiUrl = changes.apiUrl.newValue || config.apiUrl;
+        console.log('[ApiClient] API URL updated:', this.apiUrl);
+      }
     });
   }
   
@@ -15,16 +29,23 @@ export class ApiClient {
       const token = await this.getAuthToken();
       
       if (!token) {
-        console.warn('No auth token found');
+        console.warn('[ApiClient] No auth token found - user needs to log in');
         return false;
       }
       
       if (!this.apiUrl) {
-        console.warn('No API URL configured');
+        console.error('[ApiClient] No API URL configured');
         return false;
       }
       
-      const response = await fetch(`${this.apiUrl}/events`, {
+      console.log('[ApiClient] Sending event:', {
+        url: event.url,
+        domain: event.domain,
+        duration: event.duration_seconds,
+        timestamp: new Date(event.timestamp).toISOString()
+      });
+      
+      const response = await fetch(`${this.apiUrl}events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,29 +55,31 @@ export class ApiClient {
       });
       
       if (response.status === 401) {
-        // Token expired or invalid
-        console.warn('Authentication failed - token may be expired');
+        console.warn('[ApiClient] Authentication failed - token may be expired');
         await this.clearAuthToken();
         return false;
       }
       
       if (!response.ok) {
-        console.error(`API error: ${response.status}`);
+        console.error('[ApiClient] API error:', response.status, response.statusText);
         return false;
       }
+      
+      console.log('[ApiClient] Event sent successfully');
       
       // Check if response has nudge
       const text = await response.text();
       if (text) {
         const data = JSON.parse(text);
         if (data.nudge) {
+          console.log('[ApiClient] Received nudge:', data.nudge.prompt);
           this.showNudge(data.nudge);
         }
       }
       
       return true;
     } catch (error) {
-      console.error('Error sending event:', error);
+      console.error('[ApiClient] Error sending event:', error);
       return false;
     }
   }

@@ -7,6 +7,7 @@ export interface StoredEvent {
     userId: string;
     timestamp: number;
     domain: string;
+    url: string;
     title: string;
     duration_seconds: number;
     scroll_count: number;
